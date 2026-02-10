@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .result-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .short-url {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+        }
+        
+        #shortUrlDisplay {
+            font-family: 'Courier New', monospace;
+            font-size: 15px;
+            line-height: 1.6;
+            user-select: all;
+            -webkit-user-select: all;
+            -moz-user-select: all;
+            -ms-user-select: all;
+            transition: border-color 0.3s, background-color 0.3s;
+        }
+        
+        #shortUrlDisplay:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .short-url input {
+            flex: 1;
+            background: white;
+            font-weight: 600;
+            color: #667eea !important;
+            border: 2px solid #e0e0e0;
+            padding: 12px;
+            font-size: 16px;
+            min-height: 20px;
+        }
+        
+        .short-url input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .copy-btn {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .copy-btn:hover {
+            background: #5568d3;
+        }
+
+        .error {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fee;
+            border-left: 4px solid #f44336;
+            border-radius: 5px;
+            color: #c62828;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .stats {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .stats.show {
+            display: block;
+        }
+
+        .stats-item {
+            margin: 10px 0;
+            color: #333;
+        }
+
+        .stats-item strong {
+            color: #667eea;
+        }
+
+        .loading {
+            text-align: center;
+            color: #667eea;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .loading.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 URL Shortener</h1>
+        <p class="subtitle">Transform long URLs into short, shareable links</p>
+
+        <form id="urlForm">
+            <div class="input-group">
+                <label for="originalUrl">Enter URL to shorten:</label>
+                <input type="text" id="originalUrl" name="url" 
+                       placeholder="https://example.com/very/long/url" required>
+            </div>
+            <button type="submit" id="submitBtn">Shorten URL</button>
+        </form>
+
+        <div class="loading" id="loading">Processing...</div>
+
+        <div class="error" id="error"></div>
+
+        <div class="result" id="result">
+            <div class="result-label">Shortened URL:</div>
+            <div class="short-url">
+                <input type="text" id="shortUrl" readonly value="" 
+                       style="display: none;"
+                       aria-label="Shortened URL">
+                <div id="shortUrlDisplay" style="display: none; color: #667eea; font-weight: 600; padding: 12px 15px; background: white; border: 2px solid #e0e0e0; border-radius: 8px; flex: 1; min-height: 20px; font-family: 'Courier New', monospace; font-size: 15px; overflow-wrap: break-word; word-break: normal; white-space: normal; cursor: text; user-select: all; line-height: 1.6;"></div>
+                <button class="copy-btn" onclick="copyToClipboard()">Copy</button>
+            </div>
+            <div class="stats" id="stats">
+                <div class="stats-item">
+                    <strong>Original URL:</strong> <span id="originalUrlDisplay"></span>
+                </div>
+                <div class="stats-item">
+                    <strong>Created:</strong> <span id="createdAt"></span>
+                </div>
+                <div class="stats-item">
+                    <strong>Clicks:</strong> <span id="clickCount">0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('urlForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        const result = document.getElementById('result');
+        const shortUrlInput = document.getElementById('shortUrl');
+        const stats = document.getElementById('stats');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const originalUrl = document.getElementById('originalUrl').value.trim();
+            
+            if (!originalUrl) {
+                showError('Please enter a URL');
+                return;
+            }
+
+            // Reset UI
+            hideError();
+            hideResult();
+            // Clear previous result but keep the input element accessible
+            shortUrlInput.value = '';
+            shortUrlInput.removeAttribute('value');
+            showLoading();
+            submitBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/shorten', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: originalUrl })
+                });
+
+                const data = await response.json();
+                console.log('Full API Response:', JSON.stringify(data, null, 2));
+
+                if (response.ok) {
+                    if (data.shortUrl) {
+                        console.log('Setting shortUrl to:', data.shortUrl);
+                        console.log('shortUrlInput element before:', shortUrlInput);
+                        
+                        // Show result first so the input is visible
+                        showResult();
+                        
+                        // Set the value in the input (hidden, used for copying)
+                        shortUrlInput.value = data.shortUrl;
+                        shortUrlInput.setAttribute('value', data.shortUrl);
+                        shortUrlInput.defaultValue = data.shortUrl;
+                        
+                        // Show the URL in the display div (visible element)
+                        const displayDiv = document.getElementById('shortUrlDisplay');
+                        if (displayDiv) {
+                            displayDiv.textContent = data.shortUrl;
+                            displayDiv.style.display = 'block';
+                            // Allow text selection and copying
+                            displayDiv.style.userSelect = 'all';
+                            displayDiv.style.webkitUserSelect = 'all';
+                        }
+                        
+                        // Keep input hidden (we use the div for display)
+                        shortUrlInput.style.display = 'none';
+                        
+                        // Force a reflow to ensure the browser updates
+                        void shortUrlInput.offsetHeight;
+                        
+                        console.log('shortUrlInput element after:', shortUrlInput);
+                        console.log('Value after setting:', shortUrlInput.value);
+                        console.log('getAttribute value:', shortUrlInput.getAttribute('value'));
+                        console.log('Computed style color:', window.getComputedStyle(shortUrlInput).color);
+                        console.log('Input visible?', shortUrlInput.offsetWidth > 0 && shortUrlInput.offsetHeight > 0);
+                        
+                        // Small delay to ensure DOM is updated
+                        setTimeout(() => {
+                            // Ensure display div has the value
+                            if (displayDiv && displayDiv.textContent !== data.shortUrl) {
+                                displayDiv.textContent = data.shortUrl;
+                            }
+                            console.log('Final display div content:', displayDiv ? displayDiv.textContent : 'N/A');
+                        }, 50);
+                        
+                        // Fetch stats
+                        const shortCode = data.shortUrl.split('/').pop();
+                        fetchStats(shortCode);
+                    } else {
+                        // If no shortUrl but response is OK, try to get it from stats
+                        console.warn('No shortUrl in response, but response was OK');
+                        showError('Received response but no shortened URL. Please try again.');
+                    }
+                } else {
+                    const errorMsg = data.error || data.message || 'Failed to shorten URL';
+                    showError('Error: ' + errorMsg);
+                    console.error('API Error:', data);
+                }
+            } catch (err) {
+                showError('Network error: ' + err.message);
+                console.error('Fetch error:', err);
+            } finally {
+                hideLoading();
+                submitBtn.disabled = false;
+            }
+        });
+
+        function showLoading() {
+            loading.classList.add('show');
+        }
+
+        function hideLoading() {
+            loading.classList.remove('show');
+        }
+
+        function showError(message) {
+            error.textContent = message;
+            error.classList.add('show');
+        }
+
+        function hideError() {
+            error.classList.remove('show');
+        }
+
+        function showResult() {
+            result.classList.add('show');
+        }
+
+        function hideResult() {
+            result.classList.remove('show');
+            stats.classList.remove('show');
+            // Don't clear the input value, just hide the result div
+        }
+
+        async function fetchStats(shortCode) {
+            try {
+                const response = await fetch(`/api/stats/${shortCode}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Stats data received:', data);
+                    
+                    // Always ensure shortUrl is set from stats if available
+                    if (data.shortUrl) {
+                        console.log('Setting shortUrl from stats:', data.shortUrl);
+                        shortUrlInput.value = data.shortUrl;
+                        shortUrlInput.setAttribute('value', data.shortUrl);
+                        
+                        // Also update the display div
+                        const displayDiv = document.getElementById('shortUrlDisplay');
+                        if (displayDiv) {
+                            displayDiv.textContent = data.shortUrl;
+                            displayDiv.style.display = 'block';
+                        }
+                    }
+                    
+                    document.getElementById('originalUrlDisplay').textContent = data.originalUrl;
+                    document.getElementById('createdAt').textContent = new Date(data.createdAt).toLocaleString();
+                    document.getElementById('clickCount').textContent = data.clickCount;
+                    stats.classList.add('show');
+                }
+            } catch (err) {
+                console.error('Failed to fetch stats:', err);
+            }
+        }
+
+        function copyToClipboard() {
+            const displayDiv = document.getElementById('shortUrlDisplay');
+            const urlToCopy = shortUrlInput.value || shortUrlInput.getAttribute('value') || 
+                            (displayDiv ? displayDiv.textContent : '') || '';
+            console.log('Copying URL:', urlToCopy);
+            
+            if (!urlToCopy) {
+                alert('No URL to copy!');
+                return;
+            }
+            
+            // Use modern Clipboard API if available
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(urlToCopy).then(() => {
+                    const copyBtn = event.target;
+                    const originalText = copyBtn.textContent;
+                    copyBtn.textContent = 'Copied!';
+                    copyBtn.style.background = '#4caf50';
+                    
+                    setTimeout(() => {
+                        copyBtn.textContent = originalText;
+                        copyBtn.style.background = '#667eea';
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy:', err);
+                    // Fallback to old method
+                    fallbackCopy(urlToCopy);
+                });
+            } else {
+                // Fallback for older browsers
+                fallbackCopy(urlToCopy);
+            }
+        }
+        
+        function fallbackCopy(text) {
+            shortUrlInput.value = text;
+            shortUrlInput.select();
+            shortUrlInput.setSelectionRange(0, 99999); // For mobile devices
+            try {
+                document.execCommand('copy');
+                const copyBtn = event.target;
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = 'Copied!';
+                copyBtn.style.background = '#4caf50';
+                
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                    copyBtn.style.background = '#667eea';
+                }, 2000);
+            } catch (err) {
+                console.error('Fallback copy failed:', err);
+                alert('Failed to copy. Please copy manually: ' + text);
+            }
+        }
+    </script>
+</body>
+</html>
+
