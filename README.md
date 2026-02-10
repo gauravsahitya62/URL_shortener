@@ -22,8 +22,8 @@ A modern, full-featured URL shortener application built with Spring Boot. Transf
 
 1. **Clone the repository**
    ```bash
-   git clone <your-repo-url>
-   cd url-shortener
+   git clone https://github.com/gauravsahitya62/URL_shortener.git
+   cd URL_shortener
    ```
 
 2. **Build the project**
@@ -152,4 +152,3 @@ For questions or suggestions, please open an issue in the repository.
 ---
 
 **Built with ❤️ using Spring Boot**
-
